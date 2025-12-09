@@ -1,18 +1,21 @@
 #include "Inventario.h"
 #include "Utils.h"
-#include <algorithm> // Para transformar texto a minusculas si quisieras mejorar busqueda
+#include <iostream>
+#include <iomanip>
 
-// --- METODOS AUXILIARES ---
+using namespace std;
+
+// --- MÉTODO PRIVADO ---
 int Inventario::buscarIndiceProducto(string nombreBusqueda) {
     for (size_t i = 0; i < listaProductos.size(); i++) {
         if (listaProductos[i].getNombre() == nombreBusqueda) {
-            return i; // Retorna la posición si lo encuentra
+            return i;
         }
     }
-    return -1; // Retorna -1 si no existe
+    return -1;
 }
 
-// --- METODOS PUBLICOS ---
+// --- MÉTODOS PÚBLICOS ---
 
 void Inventario::agregarProducto() {
     Utils::limpiarPantalla();
@@ -20,10 +23,9 @@ void Inventario::agregarProducto() {
 
     string nom;
     cout << "Ingrese nombre del producto: ";
-    cin.ignore();
+    if (cin.peek() == '\n') cin.ignore();
     getline(cin, nom);
 
-    // Validación básica para no repetir nombres
     if (buscarIndiceProducto(nom) != -1) {
         cout << COLOR_RED << "\n[!] Error: Ya existe un producto con ese nombre." << COLOR_RESET << endl;
         Utils::pausar();
@@ -68,9 +70,22 @@ void Inventario::buscarProducto() {
     Utils::limpiarPantalla();
     Utils::dibujarEncabezado("BUSQUEDA DE PRODUCTOS");
 
+    if (listaProductos.empty()) {
+        cout << COLOR_YELLOW << "[!] No hay productos para buscar." << COLOR_RESET << endl;
+        Utils::pausar();
+        return;
+    }
+
+    // Lista rápida para ayuda visual
+    cout << COLOR_CYAN << "Productos disponibles:" << COLOR_RESET << endl;
+    for (const auto& prod : listaProductos) {
+        cout << " -> " << prod.getNombre() << endl;
+    }
+    cout << "--------------------------------" << endl;
+
     string nom;
-    cout << "Ingrese el nombre a buscar: ";
-    cin.ignore();
+    cout << "Ingrese el nombre a buscar (Exacto): ";
+    if (cin.peek() == '\n') cin.ignore();
     getline(cin, nom);
 
     int index = buscarIndiceProducto(nom);
@@ -87,35 +102,19 @@ void Inventario::buscarProducto() {
     Utils::pausar();
 }
 
-void Inventario::eliminarProducto() {
-    Utils::limpiarPantalla();
-    Utils::dibujarEncabezado("ELIMINAR PRODUCTO");
-
-    string nom;
-    cout << "Nombre del producto a eliminar: ";
-    cin.ignore();
-    getline(cin, nom);
-
-    int index = buscarIndiceProducto(nom);
-
-    if (index != -1) {
-        // Borrado del vector: es un poco tecnico, usa iteradores
-        listaProductos.erase(listaProductos.begin() + index);
-        cout << COLOR_GREEN << "\n[OK] Producto eliminado del sistema." << COLOR_RESET << endl;
-    }
-    else {
-        cout << COLOR_RED << "\n[X] No se puede eliminar: Producto no existe." << COLOR_RESET << endl;
-    }
-    Utils::pausar();
-}
-
 void Inventario::editarProducto() {
     Utils::limpiarPantalla();
     Utils::dibujarEncabezado("MODIFICAR PRODUCTO");
 
+    if (listaProductos.empty()) {
+        cout << COLOR_YELLOW << "[!] No hay productos para editar." << COLOR_RESET << endl;
+        Utils::pausar();
+        return;
+    }
+
     string nom;
     cout << "Nombre del producto a editar: ";
-    cin.ignore();
+    if (cin.peek() == '\n') cin.ignore();
     getline(cin, nom);
 
     int index = buscarIndiceProducto(nom);
@@ -126,20 +125,124 @@ void Inventario::editarProducto() {
 
         cout << "\n1. Modificar Precio" << endl;
         cout << "2. Modificar Cantidad" << endl;
+        cout << "3. Cancelar" << endl;
         int op = Utils::leerInt("Elija opcion: ");
 
         if (op == 1) {
             float nuevoP = Utils::leerFloat("Nuevo precio: $");
             listaProductos[index].setPrecio(nuevoP);
+            cout << COLOR_GREEN << "\n[OK] Precio actualizado." << COLOR_RESET << endl;
         }
         else if (op == 2) {
             int nuevaC = Utils::leerInt("Nueva cantidad: ");
             listaProductos[index].setCantidad(nuevaC);
+            cout << COLOR_GREEN << "\n[OK] Cantidad actualizada." << COLOR_RESET << endl;
         }
-        cout << COLOR_GREEN << "\n[OK] Actualizacion completada." << COLOR_RESET << endl;
+        else {
+            cout << "\n[!] Operacion cancelada." << endl;
+        }
     }
     else {
         cout << COLOR_RED << "\n[X] Producto no existe." << COLOR_RESET << endl;
     }
     Utils::pausar();
+}
+
+void Inventario::eliminarProducto() {
+    Utils::limpiarPantalla();
+    Utils::dibujarEncabezado("ELIMINAR PRODUCTO");
+
+    if (listaProductos.empty()) {
+        cout << COLOR_YELLOW << "[!] No hay productos para eliminar." << COLOR_RESET << endl;
+        Utils::pausar();
+        return;
+    }
+
+    // Lista con Stock para asegurar qué borramos
+    cout << "Lista actual de productos:" << endl;
+    cout << "--------------------------------" << endl;
+    for (const auto& prod : listaProductos) {
+        cout << "| " << left << setw(20) << prod.getNombre()
+            << "| Stock: " << prod.getCantidad() << endl;
+    }
+    cout << "--------------------------------" << endl;
+
+    string nom;
+    cout << "Escriba el nombre del producto a eliminar: ";
+    if (cin.peek() == '\n') cin.ignore();
+    getline(cin, nom);
+
+    int index = buscarIndiceProducto(nom);
+
+    if (index != -1) {
+        cout << COLOR_RED << "¿Seguro que desea eliminar '" << nom << "'? (1: Si / 0: No): " << COLOR_RESET;
+        int confirm;
+        cin >> confirm;
+
+        if (confirm == 1) {
+            listaProductos.erase(listaProductos.begin() + index);
+            cout << COLOR_GREEN << "\n[OK] Producto eliminado permanentemente." << COLOR_RESET << endl;
+        }
+        else {
+            cout << "\nOperacion cancelada." << endl;
+        }
+    }
+    else {
+        cout << COLOR_RED << "\n[X] No se puede eliminar: El nombre no coincide con la lista." << COLOR_RESET << endl;
+    }
+    Utils::pausar();
+}
+
+void Inventario::guardarInventario() {
+    Utils::limpiarPantalla();
+    Utils::dibujarEncabezado("GUARDANDO INVENTARIO...");
+
+    ofstream archivo(nombreArchivo);
+
+    if (archivo.is_open()) {
+        for (const auto& prod : listaProductos) {
+            archivo << prod.getNombre() << "|"
+                << prod.getPrecio() << "|"
+                << prod.getCantidad() << endl;
+        }
+        archivo.close();
+        cout << COLOR_GREEN << "\n[OK] Datos guardados correctamente en '" << nombreArchivo << "'." << COLOR_RESET << endl;
+    }
+    else {
+        cout << COLOR_RED << "\n[Error] No se pudo abrir el archivo para guardar." << COLOR_RESET << endl;
+    }
+    Utils::pausar();
+}
+
+bool Inventario::cargarInventario() {
+    ifstream archivo(nombreArchivo);
+
+    if (!archivo.is_open()) return false;
+
+    listaProductos.clear();
+    string linea;
+
+    while (getline(archivo, linea)) {
+        stringstream ss(linea);
+        string segmento;
+        string nombre;
+        float precio;
+        int cantidad;
+
+        if (getline(ss, nombre, '|')) {
+            if (getline(ss, segmento, '|')) {
+                try {
+                    precio = stof(segmento);
+                    if (getline(ss, segmento, '|')) {
+                        cantidad = stoi(segmento);
+                        Producto p(nombre, precio, cantidad);
+                        listaProductos.push_back(p);
+                    }
+                }
+                catch (...) { continue; }
+            }
+        }
+    }
+    archivo.close();
+    return true;
 }

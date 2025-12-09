@@ -2,21 +2,27 @@
 #define INVENTARIO_H
 
 #include <vector>
+#include <fstream> 
+#include <sstream> 
 #include "Producto.h"
 
 class Inventario {
 private:
     vector<Producto> listaProductos;
+    string nombreArchivo = "inventario.txt"; // Nombre del archivo por defecto
 
-    // Método privado auxiliar para encontrar el índice de un producto
     int buscarIndiceProducto(string nombreBusqueda);
 
 public:
     void agregarProducto();
     void mostrarInventario();
-    void buscarProducto();    // NUEVO
-    void editarProducto();    // NUEVO
-    void eliminarProducto();  // NUEVO
+    void buscarProducto();
+    void editarProducto();
+    void eliminarProducto();
+    
+    
+    void guardarInventario();
+    bool cargarInventario(); // Retorna true si cargó con éxito
 };
 
 #endif
